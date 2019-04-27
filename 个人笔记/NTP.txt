@@ -1,0 +1,53 @@
+NTP时间同步
+
+[root@server0 ~]# date
+2018年 04月 04日 星期三 16:10:18 CST
+
+[root@server0 ~]# date +%Y         #显示年份
+[root@server0 ~]# date +%m         #显示月份
+[root@server0 ~]# date +%d         #显示日期
+[root@server0 ~]# date +%Y%m%d     #显示年月日
+
+[root@server0 ~]# date +%Y-%m-%d   #显示年月日
+
+[root@server0 ~]# date +%F         #显示年月日
+
+修改时间：
+[root@server0 ~]# date -s  "年-月-日     时：分：秒"
+
+[root@server0 ~]# date -s   "2008-9-6   12:10:11"
+
+[root@server0 ~]# date 
+
+
+服务：NTP服务器为客户机提供标准时间
+
+ 服务端：classroom时间同步服务器
+
+
+ 客户端：虚拟机Server
+
+ 1.安装chrony客户端软件,与时间服务端沟通的软件
+[root@server0 ~]# yum -y install chrony
+[root@server0 ~]# rpm -q chrony
+chrony-1.29.1-1.el7.x86_64
+
+ 2.修改配置文件/etc/chrony.conf,指定服务端位置
+[root@server0 ~]# vim  /etc/chrony.conf 
+	#server 0.rhel.pool.ntp.org iburst   #开头加上# 注释
+	#server 1.rhel.pool.ntp.org iburst   #开头加上# 注释
+	#server 2.rhel.pool.ntp.org iburst   #开头加上# 注释
+	server classroom.example.com iburst  #指定服务端位置
+
+ 3. 启动客户端chronyd服务
+    d : daemon: 守护进程，守护程序
+[root@server0 ~]# systemctl restart chronyd  #重起服务
+[root@server0 ~]# systemctl enable chronyd   #设置随机自启动
+
+ 4.验证：
+[root@server0 ~]# date  -s "2000-10-1 10:12:30"
+2000年 10月 01日 星期日 10:12:30 CST
+[root@server0 ~]# date
+[root@server0 ~]# systemctl restart chronyd
+[root@server0 ~]# date
+[root@server0 ~]# date

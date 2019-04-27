@@ -1,0 +1,181 @@
+进入特权模式
+Swith>enable
+进入全局配置模式
+Swith#configure terminal
+进入接口模式
+Swith(config)#interface fastEthernet 0/1
+返回上一级模式
+exit
+回到特权模式
+end 或者 ctrl+Z(快捷键）
+修改主机名
+Switch(config)#hostname XXX
+查看当前配置
+Switch#show running-config
+配置密码
+Switch(config)#enable password XXX（明文口令）
+Switch(config)#enable secret XXX(密文口令)
+保存配置
+Switch#copy running-config startup-config
+Switch#write
+清空配置
+Switch#erase startup-config
+重启设备
+Switch#relaod
+禁用DNS查询
+Switch（config)#no ip domain-lookup
+配置控制台会话时间永不超时
+Switch(config)#line console 0
+Switch(config-line)#exec-timeoue00
+配置输出日志同步
+Switch(config)#line console 0
+Swotch(config-line)#logging synchronous
+
+
+查看mac地址表
+Switch#show mac-address-table
+在windows中查看mac地址
+ipconfig /all   (Physical Address 物理地址）
+
+
+创建vlanX
+Switch(config)#vlan X
+修改vlan名称
+Switch(config-vlan)#name vlan-name
+删除vlanX
+Switch(config)#no vlan X
+查看vlan信息
+Switch#show vlan
+进入0/1接口，把0/1接入vlanX
+Switch(config)#interface fastEthernet 0/1
+Switch(config-if)#switchport access vlan X
+
+
+为交换机配置ip地址
+Swicth(config)#interface vlan X
+Swicth(config-if)#ip address 192.168.0.5 255.255.255.0
+为交换机配置网关
+Swicth(config)#ip default-gateway 192.168.0.254
+
+
+进入组接口（连续）
+Swith(config)#interface range fastEthernet 0/1-3
+进入组接口（不连续）
+Swith(config)#interface range fastEthernet 0/1,f0/3
+查询接口模式
+Switch#show interfaces fastEthernet 0/3 switchport 
+修改为中继模式
+Switch(config-if)#switchport mode trunk
+在中继链路正禁止vlan10通过
+Switch(config-if)#switchport trunk allowed vlan remove 10
+在中继链路中允许vlan10通过
+Switch(config-if)#switchport trunk allowed vlan add 10
+
+
+配置以太通道
+捆绑为1号通道
+Switch(config-if-range)#channel-group 1 mode on
+进入1号通道配置为中继链路
+Switch(config)#interface port-channel 1
+Switch(config-if)#switchport mode trunk
+查看以太通道信息
+Switch#show etherchannel summary 
+
+
+开启三层交换机的路由功能
+Switch(config)#ip routing
+vlan1需要开启接口
+配置vlan标识为802.1q
+Switch(config-if)#switchport trunk encapsulation dot1q
+将三层交换机接口转换为路由器接口
+Switch(config)#interface fastEthernet 0/2
+Switch(config-if)#no switchport 
+
+
+为路由器配置ip地址
+Router(config)#interface gigabitEthernet 0/0
+Router(config-if)#ip address 192.168.0.254 255.255.255.0
+Router(config-if)#no shutdown   (打开接口）
+删除接口ip地址
+Router(config-if)#no ip adderss
+查看路由表  
+Router#show ip route
+静态路由
+Router(config)#ip route 目标网段 目标子网掩码 下一跳地址
+默认路由
+Router(config)#ip route 0.0.0.0 0.0.0.0 下一跳地址
+动态路由
+在路由器中开启OSPF 并宣告直连网段
+Router(config)#router ospf 1
+Router(config-router)#network 192.168.4.0 0.0.0.255 area 0
+Router(config-router)#network 192.168.5.0 0.0.0.255 area 0
+三层交换机开启OSPF 并宣告直连网段
+Switch(config)#router ospf 1
+Switch(config-router)#network 192.168.1.0 0.0.0.255 area 0
+Switch(config-router)#network 192.168.2.0 0.0.0.255 area 0
+Switch(config-router)#network 192.168.3.0 0.0.0.255 area 0
+Switch(config-router)#network 192.168.4.0 0.0.0.255 area 0
+
+
+
+ACL配置
+使用acl限制pc2 
+Router(config)#access-list 1 deny 192.168.2.2 0.0.0.0
+		或者
+Router(config)#access-list 1 deny host 192.168.2.2
+（以上两条效果相同）
+放行其他数据
+Router(config)#access-list 1 permint any
+在接口中应用acl
+Router(config)#interface g 0/1
+Router(config-if)#ip access-group 1 in
+查看acl信息
+Router#show access-list
+删除acl
+Router(config)#no access-list 1
+
+
+NAT 网络地址转换配置
+*静态映射配置
+1.配置路由器接口地址
+2.配置静态NAT转换
+Router(config)#ip nat inside source static 192.168.1.1 100.0.0.2
+Router(config)#ip nat inside source static 192.168.1.2 100.0.0.3
+3.在内部和外部端口上启用NAT
+Router(config)#in g 0/0
+Router(config-if)#ip nat inside
+Router(config-if)#in g 0/1
+Router(config-if)#ip nat outside
+*PAT 端口多路复用配置
+1.配置路由器接口地址
+2.使用ACL定义内部IP地址
+Router(config)#access-list 1 permit 192.168.1.0 0.0.0.255
+3.使用PAT复用外网接口地址，启用NAT
+Router(config)#ip nat inside source list 1 interface g0/1 overload 
+Router(config)#in g 0/0
+Router(config-if)#ip nat inside
+Router(config-if)#in g 0/1
+Router(config-if)#ip nat outside
+开启/关闭NAT排错功能
+Router#debug ip nat
+Router#undebug ip nat
+
+
+STP  生成树协议
+启用生成树命令
+Switch(config)#spanning-tree vlan 1
+指定根网桥（两条指令效果一样）
+Switch(config)#spanning-tree vlan 1 priority 4096(倍数)
+Switch(config)#spanning-tree vlan 1 root primary(主）/secondary（次）
+
+HSRP 热备份路由协议
+Switch(config)#in vlan 1
+Switch(config-if)#standby 1 ip 192.168.1.254
+Switch(config-if)#standby 1 priority 105
+查看信息
+Switch(config-if)#show standby brif
+端口跟踪（真实设备两条都可用） 
+Switch(config-if)#standby 1 track fastEthernet 0/1 10
+Switch(config-if)#standby 1 track fastEthernet 0/1（虚拟设备可用）
+抢占优先级
+Switch(config-if)#standby 1 preempt

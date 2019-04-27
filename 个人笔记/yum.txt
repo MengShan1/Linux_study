@@ -1,0 +1,22 @@
+http://classroom.example.com/content/rhel7.0/x86_64/dvd/
+
+配置文件的路径：/etc/yum.repos.d/*.repo
+
+[root@room8pc205 桌面]# firefox classroom.example.com
+[root@room8pc205 桌面]# ssh -X root@172.25.0.11
+[root@server0 ~]# rm -rf /etc/yum.repos.d/*
+[root@server0 ~]# vim /etc/yum.repos.d/dvd.repo
+
+[rhe17]			#仓库标识
+name=nsd1803		#仓库的描述信息
+baseurl=http://classroom.example.com/content/rhel7.0/x86_64/dvd/   #指定Yum仓库的位置
+enabled=1		#启用该文件
+gpgcheck=0		#关闭检测软件包签名功能
+
+[root@server0 ~]# yum repolist     #列出仓库信息
+[root@server0 ~]# yum clean all    #清空Yum的缓存
+
+  安装： yum  -y  install  软件名
+  卸载： yum  remove  软件名
+  强制重装： yum -y reinstall  软件名
+  yum provides   查询命令的执行文件包含在哪个软件包中

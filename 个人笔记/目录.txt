@@ -1,0 +1,33 @@
+根下所有默认目录
+bin   dev  etc   lib    media  opt   root  sbin  sys  usr
+boot  dvd  home  lib64  mnt    proc  run   srv   tmp  var
+
+
+
+/dev	所有设备有关的数据
+/dev/cdrom	光驱
+/dev/null	黑洞设备
+
+/root	管理员root的家目录
+/root/.bashrc	别名文件
+
+/etc/passwd	用户基本信息
+/etc/shells	解释器目录
+/etc/shadow	登陆密码信息
+/etc/group	组基本信息
+/etc/resolv.conf	DNS服务器
+/etc/hostname	主机名
+/etc/fstab	自动挂载文件
+/etc/redhat-release  版本信息
+/etc/sysconfig/network-scripts/ifcfg-eth0   网卡配置文件
+
+/sbin/nologin	禁止用户登陆系统
+/bin/bash	默认的解释器程序
+
+/home	存放所有普通用户的家目录
+
+/mnt  /opt   较无用的目录
+
+/proc/meminfo	内存信息
+
+/var/log/	日志文件

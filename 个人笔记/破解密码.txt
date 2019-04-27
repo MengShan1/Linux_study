@@ -1,0 +1,10 @@
+破解密码：
+1、在开机过程中的选择操作系统界面按e键
+2、找到以linix16开头的行，按end键，空一格，输入rd.break   console=tty0 ，按Ctrl+x，画面跳转后按回车看到终端则成功
+3、mount -o remount,rw /sysroot ##重新挂载根系统
+4、chroot /sysroot ##进入根系统
+5、echo 密码 | passwd --stdin root ##修改root密码
+6、touch /.autorelabel ##创建遗忘文件
+7、exit ##退出根系统
+8、reboot ##重启
+

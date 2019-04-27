@@ -1,0 +1,106 @@
+使用LDAP认证
+
+     网络用户：由网络中一台服务器提供用户名、密码
+     本地用户：/etc/passwd
+   
+    作用：集中管理网络中的用户帐号
+
+什么是LDAP?
+ 轻量级目录访问协议
+– Lightweight Directory Access Protocol
+
+– 提供的信息包括:用户名、密码、通信录、主机名映
+射记录、......
+
+ LDAP服务器：classroom.example.com
+
+ 客户端：虚拟机Server
+  1.安装sssd客户端软件，与服务端LDAP服务器沟通
+ [root@server0 ~]# yum  -y  install  sssd
+
+  2.安装图形工具配置sssd软件
+ [root@server0 ~]# yum  -y  install  authconfig-gtk
+
+  3.运行authconfig-gtk图形工具，配置sssd软件
+ [root@server0 ~]# exit
+  登出
+ [root@room9pc01 ~]# ssh -X  root@172.25.0.11
+ [root@server0 /]# authconfig-gtk 
+
+    选择LDAP
+      dc=example,dc=com             #指定服务端域名
+      classroom.example.com         #指定服务端主机名
+
+ 勾选TLS加密
+ 使用证书加密:  http://classroom.example.com/pub/example-ca.crt
+
+     选择LDAP密码
+
+  4.验证
+ [root@server0 ~]# systemctl restart sssd
+ [root@server0 ~]# grep ldapuser0 /etc/passwd (无输出)
+ [root@server0 ~]# id ldapuser0
+######################################################
+家目录漫游
+
+什么是NFS共享
+ Network File System,网络文件系统
+– 由NFS服务器将指定的文件夹共享给客户机
+
+   NFS服务端：classroom.example.com
+
+     客户端：虚拟机Server
+
+ 1. 查看服务端有那些共享文件夹
+ # showmount -e classroom.example.com
+ 
+ 2.访问共享文件夹，利用mount提供访问点
+ # mount classroom.example.com:/home/guests  /mnt
+ # ls /mnt/
+
+ # umount /mnt/
+ # mkdir /home/guests
+ # mount classroom.example.com:/home/guests/  /home/guests
+ # ls /home/guests
+
+ # su - ldapuser12
+
+###############################################################3
+配置NFS共享, Linux与Linux的共享
+
+• Network File System,网络文件系统
+ – 用途:为客户机提供共享使用的文件夹
+ – 协议:NFS(TCP/UDP 2049)、RPC(TCP/UDP 111)
+
+ 只读的NFS共享
+
+服务端虚拟机server
+
+1.所需软件包 : nfs-utils
+[root@server0 ~]# rpm  - q nfs-utils
+nfs-utils-1.3.0-0.el7.x86_64
+
+[root@server0 ~]# rpm -qa | grep nfs  #显示所有已安装，进行过滤
+
+2.NFS共享主配置文件/etc/exports
+[root@server0 ~]# mkdir /nsd
+[root@server0 ~]# echo haha > /nsd/abc.txt
+[root@server0 ~]# ls /nsd
+
+[root@server0 ~]# vim /etc/exports
+
+ /nsd     *(ro)              #共享目录路径      客户端(权限)
+
+3.重起nfs服务，设置为开机自起
+[root@server0 ~]# systemctl restart nfs-server
+[root@server0 ~]# systemctl enable nfs-server
+
+客户端虚拟机Desktop
+[root@desktop0 ~]# showmount -e //172.25.0.11  #查看服务端有那些共享文件夹
+[root@desktop0 ~]# vim  /etc/fstab
+172.25.0.11:/nsd   /mnt/nfs  nfs  defaults,_netdev  0  0
+
+[root@desktop0 ~]# mkdir /mnt/nfs
+[root@desktop0 ~]# mount -a
+[root@desktop0 ~]# df -h
+

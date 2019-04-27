@@ -1,0 +1,212 @@
+﻿还原三台虚拟机器
+[root@room9pc01 ~]# rht-vmctl reset classroom
+[root@room9pc01 ~]# rht-vmctl reset server
+[root@room9pc01 ~]# rht-vmctl reset desktop
+
+######################################################
+修改防火墙的默认区域为trusted
+
+虚拟机Server
+[root@server0 ~]# firewall-cmd --set-default-zone=trusted 
+
+虚拟机desktop
+[root@desktop0 ~]# firewall-cmd --set-default-zone=trusted
+
+#######################################################
+
+Samba服务基础
+ 配置SMB共享，跨平台的共享，Windows与Linux的共享
+
+• Samba 软件项目
+– 用途:为客户机提供共享使用的文件夹
+– 协议:SMB(TCP 139)、CIFS(TCP 445)
+
+• 所需软件包:samba
+• 系统服务:smb
+
+Samba共享帐号：默认情况下，访问Samba共享必须通过用户验证
+                         专门用于访问Samba共享时验证的用户与密码
+                         与系统用户为同一个用户，但是密码时samba独立密码
+ • 使用 pdbedit 管理工具
+ – 添加用户:pdbedit -a 用户名
+ – 查询用户:pdbedit -L [用户名]
+ – 删除用户:pdbedit -x 用户名  
+
+
+• 修改 /etc/samba/smb.conf
+[自定共享名]
+
+ spath = 文件夹绝对路径                            路径
+ public = no|yes //默认no                  公众的
+ browseable = yes|no //默认yes             可浏览的
+ read only = yes|no //默认yes              只读
+ write list = 用户1 .. .. //默认无               写入表
+ valid users = 用户1 .. .. //默认任何用户       有效用户
+ hosts allow = 客户机地址 .. ..                  主机允许
+ hosts deny = 客户机地址 .. ..                   主机否认
+
+服务端，虚拟机Server：
+1.安装可以提供smb共享功能的软件
+[root@server0 ~]# yum -y install samba
+
+2.建立Samba共享验证的用户
+[root@server0 ~]# useradd harry
+[root@server0 ~]# useradd kenji
+[root@server0 ~]# useradd chihiro
+
+[root@server0 ~]# pdbedit -a harry   #添加为Samba共享帐号
+[root@server0 ~]# pdbedit -a kenji   #添加为Samba共享帐号
+[root@server0 ~]# pdbedit -a chihiro #添加为Samba共享帐号
+
+[root@server0 ~]# pdbedit  -L       #查看所有Samba共享帐号
+
+3.创建共享目录与文件
+[root@server0 ~]# mkdir /common
+[root@server0 ~]# ls /
+[root@server0 ~]# ls /common/
+[root@server0 ~]# echo 123 > /common/123.txt
+[root@server0 ~]# ls /common/
+
+4.修改配置/etc/samba/smb.conf
+ vim 末行模式   ：set  nu    #添加行号
+          命令模式    G  到全文的最后
+[global]
+   89行  workgroup = STAFF       #指定工作组名
+
+[common]                      #指定共享名
+         path = /common       #指定共享文件夹的实际绝对路径
+         hosts allow = 172.25.0.11  #指定来访IP
+5.重起smb服务，刷新配置
+
+[root@server0 ~]# systemctl restart smb   #重起服务
+[root@server0 ~]# systemctl enable smb    #设置为开机自起
+
+6.服务端,虚拟机Server：
+  – 需要加 -P 选项才能实现永久设置
+ SELinux策略：布尔值（所服务功能的开关）
+
+1. 查看samba 布尔值
+[root@server0 ~]# getsebool -a  | grep samba  
+
+2.修改SELinux策略的布尔值
+[root@server0 ~]# setsebool samba_export_all_ro on
+
+3. 查看samba 布尔值
+[root@server0 ~]# getsebool -a  | grep samba
+
+
+客户端虚拟机Desktop：
+ 1.安装客户端软件，访问samba共享
+ [root@desktop0 ~]# yum -y install samba-client
+
+ 2. 查看服务端samba共享，目的看 共享名
+ [root@desktop0 ~]# smbclient -L //172.25.0.11
+  Enter root's password:   #直接敲回车
+	Sharename      
+	common 
+
+ 3.以harry身份，访问服务端samba共享
+ [root@desktop0 ~]# smbclient -U harry //172.25.0.11/common
+  Enter harry's password:   #输入密码
+  Domain=[STAFF] OS=[Unix] Server=[Samba 4.1.1]
+  smb: \> 
+
+####################################################
+ 客户端虚拟机desktop
+  使用 mount 挂载访问
+
+• 所需软件包:cifs-utils    #支持cifs协议
+
+ # yum -y install cifs-utils
+ # mkdir /mnt/samba
+
+ # mount -o user=harry,pass=123   //172.25.0.11/common 
+   /mnt/samba/
+
+ # df  -h
+
+开机自动挂载
+
+   _netdev : 网络设备
+                     先启动网络服务，具备网络参数后，再进行挂载
+
+[root@desktop0 ~]# yum -y install cifs-utils
+[root@desktop0 ~]# mkdir  /mnt/samba
+[root@desktop0 ~]# vim  /etc/fstab 
+
+ //172.25.0.11/common  /mnt/samba  cifs
+ defaults,user=harry,pass=123,_netdev  0  0
+
+[root@desktop0 ~]# mount  -a
+[root@desktop0 ~]# df  -h       #查看是否挂载成功
+
+######################################################
+读写的Samba共享
+
+服务端虚拟机Server：
+1.部署共享
+[root@server0 ~]# mkdir  /devops
+[root@server0 ~]# echo nsd > /devops/test.txt
+[root@server0 ~]# ls /devops
+
+[root@server0 ~]# vim /etc/samba/smb.conf  #修改配置文件
+  # 追加写入
+ [devops]                       #共享名
+   path = /devops               #路径为/devops
+   write list = chihiro         #允许chihiro用户可写
+
+[root@server0 ~]# systemctl restart smb
+
+2.修改SELinux策略
+[root@server0 ~]# getsebool -a | grep samba
+[root@server0 ~]# setsebool samba_export_all_rw on
+[root@server0 ~]# getsebool -a | grep samba
+
+3.用户本身的本地权限
+[root@server0 ~]# setfacl -m u:chihiro:rwx /devops
+[root@server0 ~]# getfacl /devops
+[root@server0 ~]# ls -l /devops
+
+客户端虚拟机desktop
+1.实现开机自动挂载
+[root@desktop0 ~]# mkdir /mnt/pub
+[root@desktop0 ~]# vim  /etc/fstab
+ 
+  //172.25.0.11/devops  /mnt/pub    cifs                  
+  defaults,user=chihiro,pass=123,_netdev  0 0
+
+[root@desktop0 ~]# mount -a
+[root@desktop0 ~]# df -h
+
+
+######################################################
+总结:客户端访问服务端资源
+
+        1.服务本身的访问控制
+        2.本地目录的权限
+        3.防火墙
+        4.SELinux
+
+#####################################################
+ multiuser机制,专门为普通用户设计，专为客户端设计
+
+– multiuser,提供对客户端多个用户身份的区分支持
+– sec=ntlmssp,提供NT局域网管理安全支持
+
+  必要的时候,任何普通用户都可以通过命令切换成权限较大的用户
+  来临时获取写的权限
+
+客户端虚拟机Desktop：
+[root@desktop0 ~]# vim  /etc/fstab
+//172.25.0.11/devops  /mnt/pub   cifs                 defaults,user=kenji,pass=123,_netdev,multiuser,sec=ntlmssp    
+    0   0
+[root@desktop0 ~]# umount  /mnt/pub
+[root@desktop0 ~]# mount -a
+
+[root@desktop0 ~]# su - student
+[student@desktop0 ~]$ cifscreds add -u chihiro 172.25.0.11
+[student@desktop0 ~]$ ls /mnt/pub
+
+[student@desktop0 ~]$ exit
+
+########################################################

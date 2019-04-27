@@ -1,0 +1,68 @@
+[root@LCY ~]# ls /etc/sysconfig/network-scripts/ifcfg-eth0 #查找配置文件
+/etc/sysconfig/network-scripts/ifcfg-eth0
+
+[root@LCY ~]# cat /etc/sysconfig/network-scripts/ifcfg-eth0 #打开配置文件
+DEVICE=eth0
+BOOTPROTO=dhcp
+ONBOOT=yes
+TYPE=Ethernet
+USERCTL=yes
+PEERDNS=yes
+IPV6INIT=no
+PERSISTENT_DHCLIENT=1
+
+[root@LCY ~]# nmcli connection show #查询识别的网卡名称
+名称         UUID                                  类型            设备 
+System eth0  5fb06bd0-0bb0-7ffb-45f1-d6edd65f3e03  802-3-ethernet  eth0
+
+[root@LCY ~]# nmcli connection modify ‘System eth0' ipv4.method manual ipv4.addresses '172.25.0.100/24 172.25.0.254' connection.autoconnect yes
+(#nmcli cinnection 修改网络配置 ‘网卡名’ ipv4.方法 手工配置 ipv4.地址 ‘IP地址/子网掩码 网关地址’ 每次开机自动启用配置）
+
+
+[root@LCY ~]# cat /etc/sysconfig/network-scripts/ifcfg-eth0 
+DEVICE=eth0
+BOOTPROTO=none
+ONBOOT=yes
+TYPE=Ethernet
+USERCTL=yes
+IPV6INIT=no
+PERSISTENT_DHCLIENT=1
+IPADDR0=172.25.0.100
+PREFIX0=24
+GATEWAY0=172.25.0.254
+DEFROUTE=yes
+IPV4_FAILURE_FATAL=no
+NAME="System eth0"
+UUID=5fb06bd0-0bb0-7ffb-45f1-d6edd65f3e03
+
+[root@LCY ~]#nmcli connection up 'System eth0' #激活配置
+
+[root@LCY ~]# ls /etc/resolv.conf #DNS服务器地址的配置文件
+/etc/resolv.conf
+[root@LCY ~]# vim /etc/resolv.conf （vim 命令模式下dd删除整行内容）
+  nameserver   172.25.254.254(修改DNS配置）
+	
+ 验证：
+[root@LCY ~]# nslookup desktop0.example.com
+[root@LCY ~]# nslookup server0.example.com
+
+
+###################################################################
+ipv6配置
+
+
+ IPv4 : 32个二进制， 用 点  分隔 四 部分，转换为 4 个 十进制
+
+ IPv6 : 128个二进制，用 冒号 分隔 八 部分，转换每部分四个16进制数
+
+  – 每段内连续的前置 0 可省略、连续的多个 : 可简化为 ::
+ 
+ #  nmcli connection modify 'System eth0' 
+   ipv6.method manual ipv6.addresses 2003:ac18::305/64 
+   connection.autoconnect  yes
+
+ # nmcli connection up 'System eth0'
+
+ # ifconfig | less
+
+ # ping6  2003:ac18::305

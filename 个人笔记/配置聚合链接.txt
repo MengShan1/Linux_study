@@ -1,0 +1,49 @@
+配置聚合连接 (网卡绑定、链路聚合)
+
+1.创建 虚拟网卡      (man teamd.conf  #查看帮助信息)
+
+# nmcli  connection  add  type  team        
+ con-name  team0   ifname  team0  autoconnect   yes        
+ config   '{"runner": {"name": "activebackup"}}'
+
+# ifconfig   #查看是否有team0网卡
+
+# nmcli  connection 添加   类型为   team（绑定类型） 
+   配置文件名为  team0   ifconfig显示网卡名为   team0  每次开机自起
+   配置网卡绑定工作模式    热备份方式
+
+#  如果敲错误 
+# nmcli  connection  delete team0
+
+2.添加成员（添加奴隶）
+# nmcli connection add  type team-slave con-name team0-1 ifname eth1   master  team0
+
+# nmcli connection add   type team-slave con-name team0-2 ifname eth2   master  team0
+
+# nmcli connection 添加   类型为  team-slave 配置文件名  team0-1
+  网卡为  eth1   添加到team0中
+
+#如果敲错误   nmcli connection delete  team0-1
+
+3.配置team0的IP地址
+# nmcli connection modify team0 ipv4.method manual 
+  ipv4.addresses 192.168.1.1/24 connection.autoconnect yes
+
+4.激活所有配置
+# nmcli connection up team0
+# nmcli connection up team0-1
+# nmcli connection up team0-2
+ 
+
+如果激活失败
+  # nmcli connection delete team0
+  # nmcli connection delete team0-1
+  # nmcli connection delete team0-2
+##################################################### 
+
+终极验证:
+[root@server0 ~]# teamdctl team0 state  #查看team0详细信息
+
+[root@server0 ~]# ifconfig eth1 down    #禁用网卡
+
+[root@server0 ~]# teamdctl team0 state

@@ -1,0 +1,48 @@
+tar备份与恢复
+
+归档和压缩 : 1.方便对零散文件管理    2.减少空间的占用
+
+  常见的压缩格式及命令工具:
+   gzip ----> .gz
+   bzip2 ---->.bz2
+   xz ----> .xz
+
+tar 集成备份工具
+ – -c:创建归档
+ – -x:释放归档
+ – -f:指定归档文件名称
+ – -z、-j、-J:调用 .gz、.bz2、.xz 格式的工具进行处理
+ – -t:显示归档中的文件清单
+ – -C:指定释放的位置
+
+ 格式： tar  选项     /路径/压缩包名字    被归档及压缩的文件
+ 红色：压缩文件
+#  tar  -zcf   file.tar.gz        /home/  /etc/passwd 
+#  ls 
+
+#  tar -zcf  /opt/nsd01.tar.gz     /home/ /etc/passwd
+#  ls /opt/
+
+#  mkdir /nsd
+#  ls /nsd
+#  tar -xf  /opt/nsd01.tar.gz    -C  /nsd/
+#  ls /nsd
+
+#  tar -tf /opt/nsd01.tar.gz  
+  
+ – -c:创建归档
+ – -x:释放归档
+ – -f:指定归档文件名称
+ – -z、-j、-J:调用 .gz、.bz2、.xz 格式的工具进行处理
+ – -t:显示归档中的文件清单
+ – -C（大写）:指定释放的位置
+
+[root@server0 ~]# tar -jcf /root/backup.tar.bz2 /usr/local/
+
+[root@server0 ~]# ls /root/
+[root@server0 ~]# tar -tf /root/backup.tar.bz2  
+    #查看归档文件的内容
+######################################################
+	– tar -zcf 备份文件.tar.gz 被备份的文档....
+	– tar -jcf 备份文件.tar.bz2 被备份的文档....
+	– tar -Jcf 备份文件.tar.xz 被备份的文档....

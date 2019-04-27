@@ -1,0 +1,127 @@
+防火墙策略管理
+
+   作用：隔离，过滤入站请求，允许出站
+
+RHEL7的防火墙体系
+ 系统服务:firewalld
+ 管理工具:firewall-cmd、firewall-config（图形工具）
+
+  匹配规则的原则： 匹配及停止
+
+预设安全区域
+ 根据所在的网络场所区分,预设保护规则集
+  – public:仅允许访问本机的sshd、DHCP、ping少数几个服务
+  – trusted:允许任何访问
+  – block:阻塞任何来访请求，明确拒绝
+  – drop:丢弃任何来访的数据包，节省资源
+
+
+
+ 防火墙决定，客户端请求进入某个区域的规则：
+  1.查看客户端请求中源IP地址，再看所以有区域中，哪一个区域有该源IP地址的规则，则进入该区域
+
+  2.进入默认区域，public
+
+#####################################################
+默认区域的修改
+虚拟机Server
+ # firewall-cmd --get-default-zone    #查看默认区域
+虚拟机Desktop
+ # ping -c 2 172.25.0.11   #可以通信
+
+虚拟机Server
+ # firewall-cmd --set-default-zone=block   #修改默认区域
+ # firewall-cmd --get-default-zone         #查看默认区域
+虚拟机Desktop
+ # ping -c 2 172.25.0.11  #不可以通信，有回应
+
+虚拟机Server
+ # firewall-cmd --set-default-zone=drop    #修改默认区域
+ # firewall-cmd --get-default-zone         #查看默认区域
+虚拟机Desktop
+ # ping -c 2 172.25.0.11   #不可以通信，没有回应
+##########################################################
+默认区域服务的添加
+虚拟机Server
+# firewall-cmd --set-default-zone=public    #修改默认区域
+# firewall-cmd --zone=public  --list-all    #查看区域规则
+# firewall-cmd --zone=public  --add-service=http  #添加服务
+# firewall-cmd --zone=public  --list-all 
+虚拟机Desktop
+# firefox 172.25.0.11  #可以访问
+# firefox ftp://172.25.0.11  #不可以访问
+
+虚拟机Server
+# firewall-cmd --zone=public  --add-service=ftp
+# firewall-cmd --zone=public  --list-all 
+虚拟机Desktop
+# firefox 172.25.0.11  #可以访问
+# firefox ftp://172.25.0.11  #可以访问
+################################################################
+策略的永久配置
+
+– 永久(permanent)
+
+虚拟机Server
+# firewall-cmd --reload      #重新加载防火墙配置，模拟重起机器
+# firewall-cmd --zone=public --list-all 
+
+# firewall-cmd --permanent --zone=public --add-service=http
+# firewall-cmd --permanent --zone=public --add-service=ftp
+
+# firewall-cmd --zone=public --list-all 
+
+
+# firewall-cmd --reload 
+# firewall-cmd --zone=public --list-all 
+
+#####################################################
+添加源IP的规则设置
+
+虚拟机Server
+ # firewall-cmd --zone=block --list-all
+ # firewall-cmd --zone=block    --add-source=172.25.0.10
+ # firewall-cmd --zone=block --list-all 
+
+虚拟机Desktop
+ # ping -c 2 172.25.0.11        #失败
+ # firefox   172.25.0.11        #失败
+ # firefox   ftp://172.25.0.11  #失败
+
+真机访问
+ # ping -c 2 172.25.0.11        #成功
+ # firefox   172.25.0.11        #成功
+ # firefox   ftp://172.25.0.11  #成功
+#####################################################
+工作时防火墙，设置的方式
+ 
+  严格：默认区域为drop，把允许的IP单独放入trusted
+  宽松：默认区域为trusted，把拒绝的IP单独放入drop
+#####################################################
+  端口：编号，标识作用，标识每个服务
+
+实现本机的端口映射
+ 本地应用的端口重定向(端口1 --> 端口2)
+– 从客户机访问 端口1 的请求,自动映射到本机 端口2
+– 比如,访问以下两个地址可以看到相同的页面:
+
+  客户端desktop-----》172.25.0.11:5423-----》服务端Server
+
+  服务端Server-----172.25.0.11:5423 移交 -----172.25.0.11:80
+
+虚拟机Server
+# firewall-cmd --reload 
+虚拟机Desktop
+# firefox 172.25.0.11  #可以访问
+# firefox 172.25.0.11:5423  #不可以访问
+
+虚拟机Server
+# firewall-cmd --permanent 
+--zone=public 
+--add-forward-port=port=5423:proto=tcp:toport=80
+  #添加  -  转发  -  端口   =   将端口5423     协议为tcp  转发到80
+
+# firewall-cmd --reload 
+# firewall-cmd --zone=public --list-all 
+虚拟机Desktop
+# firefox 172.25.0.11:5423  #可以访问
